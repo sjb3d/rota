@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>rota documentation</title>
+<style>
+table, th, td {
+	border: 1px solid black;
+	border-collapse: collapse;
+}
+th, td {
+	padding: 5px;
+}
+table tr td {
+	width: 10px;
+}
+th.vertical {
+	text-align: center;
+	white-space: nowrap;
+	transform: rotate(-90deg);
+}
+th.vertical p {
+	margin: 0 -999px;
+	display: inline-block;
+}
+th.vertical p:before {
+	content: '';
+	width: 0;
+	padding-top: 110%;
+	display: inline-block;
+	vertical-align: middle;
+}
+table {
+}
+</style>
+</head>
+<body>
+<h1>rota documentation</h1>
+
+<h2>Overview</h2>
+<p>This software makes a rota for registrars who work in the oncology department of a certain hospital.  For this rota, staff members work the following pattern:</p>
+<ul>
+	<li>One doctor is present for all weekdays of one week (called a <em>ward week</em>)</li>
+	<li>Each weekday, an additional doctor is present on call (called an <em>on call day</em>)</li>
+	<li>Each weekend, one doctor is on call for both days (called a <em>weekend on call</em>)</li>
+</ul>
+<p>A valid rota <strong>must</strong> satisfy the following:</p>
+<ul>
+	<li>One person cannot do a ward week and on call day at the same time!</li>
+	<li>People cannot work days they requested as holiday</li>
+	<li>People cannot be on the ward for weeks they mark as <em>invalid ward weeks</em></li>
+	<li>People cannot be on call for days they mark as <em>invalid on call days</em></li>
+	<li>People cannot work the day after an on call shift</li>
+	<li>People cannot work an on call day the day before a requested holiday (for politeness' sake)</li>
+</ul>
+<p>A rota is also given points for the following features:</p>
+<ul>
+	<li>People not working <em>disliked ward weeks</em></li>
+	<li>People not working <em>disliked on call days</em></li>
+	<li>Number of weekends on call are even between staff members (can be <em>biased</em> if people owe/are owed shifts)</li>
+	<li>Number of on call days are even between staff members (can be <em>biased</em>)</li>
+	<li>Number of on call days that are bank holidays are even between staff members (can also be <em>biased</em>)</li>
+	<li>Number of ward weeks are even between staff members (can be <em>biased</em>)</li>
+	<li>The person who works a ward week is working that weekend on call</li>
+	<li>Even sized blocks of days off for each person (to spread out shifts over the rota period)</li>
+	<li>Even sized blocks between ward weeks for each person (to spread these out specifically over the rota period)</li>
+</ul>
+<p>The software works by generating a completely random rota, then tries to improve it by randomly swapping people around, usually keeping the result if this produces a better score.  After a few million iterations (which should take only a few seconds) it will print the results, which should be a valid rota with a good score.</p>
+
+<h2>What Input It Needs</h2>
+<p>A rota can be made for a whole number of weeks, with each week covering Mon-Sun inclusive.</p>
+<p>For each staff member, the following data should be provided as input:</p>
+<ul>
+	<li>A name to identify the person by</li>
+	<li>The first and last day of employment over this rota (defaults to the whole rota period)</li>
+	<li>The proportion of full time this person should work (defaults to <code>1.0</code>, i.e. full time)</li>
+	<li>Days that must be holiday</li>
+	<li>Weeks that are <em>invalid ward weeks</em> (i.e. this person cannot work on the ward this week)</li>
+	<li>Days that are <em>invalid on call days</em> (i.e. this person cannot work on call this day)</li>
+	<li>Weeks that are <em>disliked ward weeks</em></li>
+	<li>Days that are <em>disliked on call days</em></li>
+	<li>Ward week, on call day and weekend on call bias (i.e. number carried over from previous rota, defaults to 0)</li>
+</ul>
+
+<h2>How To Provide The Input</h2>
+<p>The input to the rota is a single spreadsheet saved as the file <code>input.csv</code> (in <code>CSV</code> format) in the same folder as the <code>rota</code> application. Here is an example <code>input.csv</code> (with colours added to highlight the weekends only):</p>
+<table>
+	<tr>
+		<th>Name</th>
+		<th>Category</th>
+		<th class="vertical"><p>04/01/2016</p></th>
+		<th class="vertical"><p>05/01/2016</p></th>
+		<th class="vertical"><p>06/01/2016</p></th>
+		<th class="vertical"><p>07/01/2016</p></th>
+		<th class="vertical"><p>08/01/2016</p></th>
+		<th class="vertical" style="color:grey"><p>09/01/2016</p></th>
+		<th class="vertical" style="color:grey"><p>10/01/2016</p></th>
+		<th class="vertical"><p>11/01/2016</p></th>
+		<th class="vertical"><p>12/01/2016</p></th>
+		<th class="vertical"><p>13/01/2016</p></th>
+		<th class="vertical"><p>14/01/2016</p></th>
+		<th class="vertical"><p>15/01/2016</p></th>
+		<th class="vertical" style="color:grey"><p>16/01/2016</p></th>
+		<th class="vertical" style="color:grey"><p>17/01/2016</p></th>
+		<th class="vertical"><p>18/01/2016</p></th>
+		<th class="vertical"><p>19/01/2016</p></th>
+		<th class="vertical"><p>20/01/2016</p></th>
+		<th class="vertical"><p>21/01/2016</p></th>
+		<th class="vertical"><p>22/01/2016</p></th>
+		<th class="vertical" style="color:grey"><p>23/01/2016</p></th>
+		<th class="vertical" style="color:grey"><p>24/01/2016</p></th>
+	</tr>
+	<tr>
+		<td>Alice</td>
+		<td>holiday</td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td>x</td>
+		<td>x</td>
+		<td>x</td>
+		<td>x</td>
+		<td>x</td>
+		<td style="background-color:lightblue">x</td>
+		<td style="background-color:lightblue">x</td>
+	</tr>
+	<tr>
+		<td>Bob</td>
+		<td>holiday</td>
+		<td>x</td>
+		<td>x</td>
+		<td>x</td>
+		<td>x</td>
+		<td>x</td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+	</tr>
+	<tr>
+		<td>Clare</td>
+		<td>holiday</td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+	</tr>
+	<tr>
+		<td>Clare</td>
+		<td>always cannot be on call</td>
+		<td>x</td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+	</tr>
+	<tr>
+		<td>Dave</td>
+		<td>holiday</td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td style="background-color:lightblue"></td>
+		<td style="background-color:lightblue"></td>
+	</tr>
+</table>
+<p>The spreadsheet must follow the layout as above: the first two columns for name and category, then one column per date.  The dates must start on a Monday and end on a Sunday.</p>
+<p>Each subsequent row should have the following information:</p>
+<ul>
+	<li>The first column should contain the name of the staff member.  Different information can be added for the same person by using the same name for multiple rows.</li>
+	<li>The second column should contain one of the <em>category</em> names described in the table below.</li>
+	<li>
+		The third column onwards describes the data for this category. How this should be entered depends on the category, but will be one of the following:
+		<ul>
+			<li>Most categories just require some text (e.g. `x`) in the column for each date that should be affected.</li>
+			<li>Some categories will repeat these affected dates for all weeks of the rota.</li>
+			<li>Some categories expect a mark for a single date only.</li>
+			<li>Some categories expect a mark or a number in the third column only.</li>
+		</ul>
+	</li>
+</ul>
+<p>Here is a full description of all supported categories:</p>
+<table>
+	<tr>
+		<th>Category</th>
+		<th width="80%">Description</th>
+	</tr>
+	<tr>
+		<td><pre>holiday</pre></td>
+		<td>Each marked date is set as holiday for the specified person.</td>
+	</tr>
+	<tr>
+		<td><pre>bank holiday</pre></td>
+		<td>Each marked date is set as a bank holiday (and the person column should be left blank for this row, as a special case).</td>
+	</tr>
+	<tr>
+		<td><pre>start date</pre></td>
+		<td>A single date should mark the first day of employment.</td>
+	</tr>
+	<tr>
+		<td><pre>end date</pre></td>
+		<td>A single date should mark the last day of employment.</td>
+	</tr>
+	<tr>
+		<td><pre>part time</pre></td>
+		<td>The next column should contain a number between 0 and 1, and all further columns should be left blank.  For example, if a staff member works 80% of full time, the number <code>0.8</code> should be used.</td>
+	</tr>
+	<tr>
+		<td><pre>no ward weeks</pre></td>
+		<td><strong>If the next column has some text</strong>, this person becomes exempt from ward weeks.  The proportion of on call shifts is not changed.</td>
+	</tr>
+	<tr>
+		<td><pre>cannot be on call</pre></td>
+		<td>Each marked date is set as an <em>invalid on call day</em>.  A valid rota will not schedule an on call shift for this person on these days, other days must be found to ensure this person does their proportion of the on call shifts.</td>
+	</tr>
+	<tr>
+		<td><pre>always cannot be on call</pre></td>
+		<td>Any marked date is repeated for all weeks of the rota.  This is convenient if someone regularly cannot do on calls on a particular weekday, as is equivalent to manually marking every week in the <code>cannot be on call</code> category.</td>
+	</tr>
+	<tr>
+		<td><pre>cannot be on ward</pre></td>
+		<td>Each marked weekday sets that week as an <em>invalid ward week</em>.  A valid rota will not schedule a ward week for this person for that week.</td>
+	</tr>
+	<tr>
+		<td><pre>prefer not on call</pre></td>
+		<td>Each marked date is set as a <em>disliked on call day</em>.  The software will attempt to minimise the number of disliked days that appear in the final rota, but it may not always be possible to avoid all of them.</td>
+	</tr>
+	<tr>
+		<td><pre>always prefer not on call</pre></td>
+		<td>Any marked date is repeated for all weeks of the rota.  This is equivalent to manually marking every week in the <code>prefer not on call</code> category.</td>
+	</tr>
+	<tr>
+		<td><pre>prefer not on ward</pre></td>
+		<td>Each marked weekday sets that week as a <em>disliked ward week</em>.  The software will attempt to minimise the number of disliked ward weeks that appear in the final rota, but it may not always be possible to avoid all of them.</td>
+	</tr>
+	<tr>
+		<td><pre>must be on call</pre></td>
+		<td>The software will attempt to schedule this person to be on call for each marked date. This can be useful to guide the rota into a certain configuration, or fix the continuity from a previous rota.</td>
+	</tr>
+	<tr>
+		<td><pre>ward week bias</pre></td>
+		<td>The number of weeks to bias ward shifts by for this person.  For example, if set to <code>1</code>, the rota will be scored as if this person worked one more week than is present on the rota.</td>
+	</tr>
+	<tr>
+		<td><pre>on call day bias</pre></td>
+		<td>The number of days to bias on call days by for this person.</td>
+	</tr>
+	<tr>
+		<td><pre>on call weekend bias</pre></td>
+		<td>The number of weekends to bias on call weekends by for this person.  A value of <code>1</code> indicates a whole weekend of <em>credit</em>, so fewer weekends will be worked on this rota to compensate.</td>
+	</tr>
+</table>
+<p>There are several categories to <em>bias</em> the rota to take into account any days owed (or days in credit) from the previous rota.  All of these categories expect a positive or negative number in the next column.  Positive numbers indicate shifts in <em>credit</em> (so the person should do slightly fewer shifts on this rota to compensate), negative numbers indicate shifts <em>owed</em> (so the person should do slightly more shifts on this rota to compensate).  A bias does not have to be a whole number, adding fractional amounts (e.g. a bias of <code>-1.5</code>) is allowed.</p>
+<p>In general a rota does not perfectly distribute shifts between staff members, so the software can output bias values for each person at the end of the rota period.  If these values are used as the input for the <em>next</em> rota, any fractional shifts credited/owed are taken into account, making the rota more fair over time.</p>
+
+<h2>How To Run The Software</h2>
+<p>Double clicking <code>rota.exe</code> (in Windows) or <code>make_rota.command</code> (in OSX) will run the software, reading the <code>input.csv</code> file from the same folder.  If successful, it should print something like the following before exiting:</p>
+<pre>
+written input to "check.html"
+finished! best score: -99.087036 (valid)                    
+written output to "output.html"
+written output to "output.csv"
+</pre>
+<p>In this case, the final rota was <em>valid</em>, so all the constraints were possible to satisfy.  If the final rota was not valid, a list of all the failure conditions will be printed before exiting, for example like the following:</p>
+<pre>
+finished! best score: -9085.658203 (invalid)                 
+Bob: working on holiday (4/1/2016)
+Alice: multiple shifts at once (5/1/2016)
+Alice: multiple shifts at once (7/1/2016)
+Bob: multiple shifts at once (11/1/2016)
+Bob: multiple shifts at once (13/1/2016)
+Alice: work following on call (15/1/2016)
+written output to "output.html"
+written output to "output.csv"
+</pre>
+
+<h2>Checking The Software Output</h2>
+<p>The software will write three output files to the same folder that it is run from:</p>
+<table>
+	<tr>
+		<th>File</th>
+		<th width="90%">Description</th>
+	</tr>
+	<tr>
+		<td><pre>check.html</pre></td>
+		<td>A page that reproduces all the information read from <code>input.csv</code>.  This can be useful to make sure that all the information was read correctly by the software.</td>
+	</tr>
+	<tr>
+		<td><pre>output.html</pre></td>
+		<td>The output rota, showing all shifts and holidays.</td>
+	</tr>
+	<tr>
+		<td><pre>output.csv</pre></td>
+		<td>A summary spreadsheet for the rota, just naming the person on call/ward for each day of the rota.</td>
+	</tr>
+</table>
+<p>For the example <code>input.csv</code> above, the following is produced in <code>check.html</code>:</p>
+<table>
+<tr>
+<th>Name</th><th>Category</th>
+<th colspan="7">4/1/2016</th>
+<th colspan="7">11/1/2016</th>
+<th colspan="7">18/1/2016</th>
+</tr>
+<tr><td rowspan="6" style="white-space: nowrap"><strong>Alice</strong></td>
+<td style="white-space: nowrap">holiday</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+</tr>
+<tr><td style="white-space: nowrap">must be on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">cannot be on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">prefer not on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">cannot be on ward</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">prefer not on ward</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td rowspan="6" style="white-space: nowrap"><strong>Bob</strong></td>
+<td style="white-space: nowrap">holiday</td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">must be on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">cannot be on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">prefer not on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">cannot be on ward</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">prefer not on ward</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td rowspan="6" style="white-space: nowrap"><strong>Clare</strong></td>
+<td style="white-space: nowrap">holiday</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">must be on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">cannot be on call</td>
+<td style="background-color:darkred"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:darkred"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:darkred"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">prefer not on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">cannot be on ward</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">prefer not on ward</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td rowspan="6" style="white-space: nowrap"><strong>Dave</strong></td>
+<td style="white-space: nowrap">holiday</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">must be on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">cannot be on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">prefer not on call</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">cannot be on ward</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<tr><td style="white-space: nowrap">prefer not on ward</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr>
+<table>
+<p>For the same example, the following is produced in <code>output.html</code> to show the generated rota:</p>
+<table>
+<tr><th colspan="2">Key</th></tr>
+<tr><td style="white-space: nowrap">holiday</td><td style="background-color:grey"></td></tr>
+<tr><td style="white-space: nowrap">bank holiday</td><td style="background-color:lightblue"></td></tr>
+<tr><td style="white-space: nowrap">weekend</td><td style="background-color:cyan"></td></tr>
+<tr><td style="white-space: nowrap">ward week</td><td style="background-color:yellow"></td></tr>
+<tr><td style="white-space: nowrap">on call</td><td style="background-color:red"></td></tr>
+</table>
+<br>
+<table>
+<tr>
+<th>Name</th>
+<th colspan="7">4/1/2016</th>
+<th colspan="7">11/1/2016</th>
+<th colspan="7">18/1/2016</th>
+</tr><tr><td style="white-space: nowrap">Alice</td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:red"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:red"></td>
+<td style="background-color:red"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+</tr><tr><td style="white-space: nowrap">Bob</td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:grey"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:red"></td>
+<td></td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr><tr><td style="white-space: nowrap">Clare</td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td></td>
+<td style="background-color:red"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:red"></td>
+<td style="background-color:red"></td>
+</tr><tr><td style="white-space: nowrap">Dave</td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:yellow"></td>
+<td style="background-color:red"></td>
+<td style="background-color:red"></td>
+<td></td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:red"></td>
+<td></td>
+<td style="background-color:red"></td>
+<td style="background-color:cyan"></td>
+<td style="background-color:cyan"></td>
+</tr></table>
+
+<h2>Help!</h2>
+<p>This software isn't being actively developed any more, but if there is an urgent issue then the author can be reached by email at si@sjbrown.co.uk.</p>
+
+</body>
+</html>
